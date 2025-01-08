@@ -1,0 +1,1 @@
+print("Anti-Screamer: Server Loaded")
