@@ -520,7 +520,7 @@ optionsButtonMenu = function(self)
     optionsFrame:SetTitle("Options")
     optionsFrame:SetSize(400,300)
     optionsFrame:Center()
-    optionsFrame:SetPos(optionsFrame:GetPos() + 150)
+    optionsFrame:SetPos(optionsFrame:GetX() + 200,optionsFrame:GetY() + 70)
     optionsFrame:MakePopup()
     ---------------------------------------------------------------
     
@@ -566,7 +566,7 @@ optionsButtonMenu = function(self)
         ---------------------------------------------------------------
         
         local maxDays = vgui.Create("DNumberWang",topPanel) 
-        maxDays:SetMinMax(1,1500)
+        maxDays:SetMinMax(0,1500)
         maxDays:SetPos(90,14)
         maxDays:SetValue(modListMaxDays)
         local label = vgui.Create("DLabel",topPanel) label:SetText("Max Days Ago: ") 
@@ -618,7 +618,7 @@ optionsButtonMenu = function(self)
             end
         end
         maxDays.OnValueChanged = function(self,val)
-            modListMaxDays = math.Clamp(val,1,1500)
+            modListMaxDays = math.Clamp(val,0,1500)
             fillModsList()
         end
         modsList = vgui.Create("DScrollPanel", modsFrame)
