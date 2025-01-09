@@ -310,7 +310,7 @@ local lastStackCount = 0
 
 local frame = nil
 
-local function CreateStackViewer()
+local function CreateStackViewer(delayRefresh)
     if IsValid(frame) then return end
     frame = vgui.Create("DFrame")
     frame:SetSize(600,720)
@@ -319,7 +319,7 @@ local function CreateStackViewer()
     frame:SetTitle("Anti-Screamer Stack Viewer")
     frame:MakePopup()
 
-    
+    if delayRefresh == nil then delayRefresh = false end
 
     stackTree = vgui.Create("DTree",frame)
     stackTree.Expand = false
@@ -422,7 +422,14 @@ local function CreateStackViewer()
             end
         end
     end
-    stackTree.RefreshTree()
+
+    if delayRefresh then
+        timer.Simple(1.0,function()
+            stackTree.RefreshTree()
+        end)
+    else
+        stackTree.RefreshTree()
+    end
     ---------------------------------------------------------------
 
     local bottomPanel = vgui.Create("DPanel",frame)
@@ -727,8 +734,11 @@ list.Set( "DesktopWindows", "My Custom Context Menu Icon", {
 
 
 // Remove the code below if you don't want it to open on map start.
-timer.Simple(2,function()
-    CreateStackViewer()
-end)
-
-
+local function lazyStartupCheck()
+    if LocalPlayer() != NULL then
+        CreateStackViewer(true)
+    else
+        timer.Simple(0.1,lazyStartupCheck)
+    end
+end
+lazyStartupCheck()
