@@ -695,7 +695,7 @@ Stack Viewer 101:
 Using the stack viewer, you are able to see what drawing/sound functions have been called recently.
 The tree starts with function names, then inside are all the addons that are calling that function with extra details.
     
-These functions that are watched are not malicious by themselves, but are able to be used to display/play screamers.
+These functions that are watched are not malicious by themselves, but can be used to display/play screamers.
 
 The stack viewer will mark a function (and the addon that calls it) as suspicious if it does the following:
 
@@ -704,13 +704,13 @@ The stack viewer will mark a function (and the addon that calls it) as suspiciou
 
 ]]
 asHelpText2 = [[
-Like the functions themselves, these things are not always malicious, but are common in screamers.
+Like the functions themselves, these things are not always malicious, but are used by screamers.
 
 It is up to you to determine if a mod is trying to display a screamer. Here are some tips:
 
     - Investigate the arguments used in the function.
     - Check how recent the addon was updated (Old mods that are updated recently could be suspicious)
-    - If an entity mod/weapon mod/etc is calling these, it could be suspicious (HUD mods for example shouldn't be suspicious, since they rely on these functions)
+    - If an entity mod/weapon mod/etc is calling drawing functions, it could be suspicious (HUD mods for example shouldn't be suspicious, since they rely on these functions)
 ]]
 
 list.Set( "DesktopWindows", "My Custom Context Menu Icon", {
