@@ -238,7 +238,6 @@ local function AntiScreamer_Timer_HookValidator()
         return
     end
     if !enabled then timer.Remove(thinkHookName) return end
-    thinkHookName = "AntiScreamer_Think_" .. math.random(1, 1000000)
     AntiScreamer_Hook()
     AntiScreamer_AddHook()
 
@@ -320,7 +319,10 @@ local function CreateStackViewer()
     frame:SetTitle("Anti-Screamer Stack Viewer")
     frame:MakePopup()
 
+    
+
     stackTree = vgui.Create("DTree",frame)
+    stackTree.Expand = false
     stackTree.DoRightClick = function(self,node)
         local menu = DermaMenu()
         menu:AddOption("Copy Name",function() SetClipboardText(node:GetText()) end)
@@ -361,6 +363,7 @@ local function CreateStackViewer()
         for funcName,funcStack in pairs(stack) do
             count = count + 1
             local node = AddNodeSpecial(funcName,"icon16/application_osx_terminal.png",stackTree, "funcNode_" .. count )
+            node.isFuncNode = true
             local count2 = 0
             if !IsValid(node) then continue end
 
@@ -433,10 +436,26 @@ local function CreateStackViewer()
     refreshButton.DoClick = function()
         stackTree.RefreshTree()
     end
+    ---------------------------------------------------------------
+    local expandButton = vgui.Create("DButton",bottomPanel)
+    expandButton:SetWide(80)
+    expandButton:Dock(LEFT)
+    expandButton:DockMargin(5,0,0,0)
+    expandButton:SetText("Expand")
+    expandButton.DoClick = function() 
+        stackTree.Expand = !stackTree.Expand 
+        for _,node in pairs(nodeCache) do
+            if node.isFuncNode then
+                node:ExpandRecurse(stackTree.Expand)        
+            end
+        end
+    end
+
+    ---------------------------------------------------------------
     local clearButton = vgui.Create("DButton",bottomPanel)
-    clearButton:SetWide(150)
+    clearButton:SetWide(80)
     clearButton:Dock(LEFT)
-    clearButton:DockMargin(5,0,5,0)
+    clearButton:DockMargin(2,0,2,0)
     clearButton:SetText("Clear")
     clearButton.DoClick = function()
         stackTree:Clear()  nodeCache = {}
@@ -444,10 +463,11 @@ local function CreateStackViewer()
     end
     ---------------------------------------------------------------
 
+ 
     local autoRefreshCheckBox = vgui.Create("DCheckBoxLabel",bottomPanel)
     local optionsButton       = vgui.Create("DButton",bottomPanel)
     local helpButton = vgui.Create("DButton",bottomPanel)
-    helpButton:Dock(RIGHT) helpButton:DockMargin(5,0,5,0)
+    helpButton:Dock(RIGHT) helpButton:DockMargin(20,0,5,0)
     helpButton:SetText("Help")
     helpButton.DoClick = function()
         if IsValid(framesToClose.helpFrame) then return end
@@ -480,7 +500,7 @@ local function CreateStackViewer()
     end
 
     ---------------------------------------------------------------
-    autoRefreshCheckBox:DockMargin(25,0,5,0)
+    autoRefreshCheckBox:DockMargin(10,0,20,0)
     autoRefreshCheckBox:SetDark(true)
     autoRefreshCheckBox:Dock(RIGHT)
     autoRefreshCheckBox:SetText("Auto Refresh")
@@ -506,7 +526,7 @@ local function CreateStackViewer()
 
     ---------------------------------------------------------------
     optionsButton:Dock(RIGHT)
-    optionsButton:DockMargin(5,0,5,0)
+    optionsButton:DockMargin(0,0,0,0)
     optionsButton:SetText("Options")
 
     optionsButton.DoClick = optionsButtonMenu
@@ -701,7 +721,7 @@ list.Set( "DesktopWindows", "My Custom Context Menu Icon", {
 	end
 } )
 
-// Remove the "--" from the line below to open the stack viewer with a console command (CHANGE THE CONSOLE COMMAND NAME AT THE TOP)
+// Remove the "--" from the line below to be able to open the stack viewer with a console command (CHANGE THE CONSOLE COMMAND NAME AT THE TOP)
 
 --concommand.Add(StackViewerConsoleCommand,CreateStackViewer)
 
