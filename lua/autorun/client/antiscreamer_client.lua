@@ -387,7 +387,7 @@ local function CreateStackViewer()
                 if addon == nil then
                     local short = stackInfo.addonName or shortSrc
                     if short == shortSrc then shortSrc:sub(5,-1) end
-                    addon = shortSrc
+                    addon = short
                 end
                 local args      = stackInfo.args or {}
                 local sus       = stackInfo.suspicious or {"",""}
