@@ -727,7 +727,7 @@ list.Set( "DesktopWindows", "My Custom Context Menu Icon", {
 
 
 // Remove the code below if you don't want it to open on map start.
-timer.Simple(0.5,function()
+timer.Simple(2,function()
     CreateStackViewer()
 end)
 
