@@ -202,6 +202,8 @@ local function AntiScreamer_OverrideBaseFunctions()
 end
 // RETURN TO ORIGINAL
 local function AntiScreamer_ResetBaseFunctions()
+    timer.Remove(thinkHookName)
+
     for _,funcName in ipairs(functionsToOverride.Surface) do
         surface[funcName] = originalFuncs.Surface[funcName]
     end
@@ -233,7 +235,12 @@ local function AntiScreamer_AddHook()
     timer.Create(thinkHookName,0.01,0,AntiScreamer_Hook)
 end
 
+local validationTimerName = thinkHookName .. "_validator"
+ 
 local function AntiScreamer_Timer_HookValidator()
+    if !enabled then return end
+    // Simple timers are undetectable and unchangable (to my knowledge)
+    if !timer.Exists(validationTimerName) then timer.Create(validationTimerName,1,0,AntiScreamer_Timer_HookValidator) end
     if AntiScreamer_HookExists() then
         return
     end
@@ -241,8 +248,6 @@ local function AntiScreamer_Timer_HookValidator()
     AntiScreamer_Hook()
     AntiScreamer_AddHook()
 
-    // Simple timers are undetectable and unchangable (to my knowledge)
-    timer.Simple(1,AntiScreamer_Timer_HookValidator)
 end
 
 
@@ -565,9 +570,10 @@ optionsButtonMenu = function(self)
         enableDisableButton:SetText(enabled and "Enabled" or "Disabled")
         enableDisableButton:SetColor(enabled and Color(25,160,75) or Color(161,35,62))
         if enabled then
-            AntiScreamer_AddHook()
+            AntiScreamer_Timer_HookValidator()
         else
             AntiScreamer_ResetBaseFunctions()
+            timer.Remove(validationTimerName)
         end
     end
     ---------------------------------------------------------------
