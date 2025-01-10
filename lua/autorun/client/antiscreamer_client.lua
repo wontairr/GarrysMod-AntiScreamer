@@ -425,6 +425,7 @@ local function CreateStackViewer(delayRefresh)
 
     if delayRefresh then
         timer.Simple(1.0,function()
+            if !IsValid(stackTree) then return end
             stackTree.RefreshTree()
         end)
     else
