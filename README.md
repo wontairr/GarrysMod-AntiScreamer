@@ -6,3 +6,8 @@
 
 Video Tutorial
 [![Video Tutorial](https://img.youtube.com/vi/WROnA-MCgI0/default.jpg)](https://www.youtube.com/watch?v=WROnA-MCgI0)
+
+
+# Contributing
+
+If you'd like to contribute, please read the [contributing guide!](https://github.com/wontairr/GarrysMod-AntiScreamer/blob/main/CONTRIBUTING.md)
