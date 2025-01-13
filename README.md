@@ -4,6 +4,9 @@
 - Provides a GUI that displays specific rendering/sound functions and what addons/script paths are calling them.
 - Obfuscated design so that it is untamperable by attacking mods.
 
+Workshop Link
+https://steamcommunity.com/sharedfiles/filedetails/?id=3404179264
+
 Video Tutorial
 [![Video Tutorial](https://img.youtube.com/vi/WROnA-MCgI0/default.jpg)](https://www.youtube.com/watch?v=WROnA-MCgI0)
 
