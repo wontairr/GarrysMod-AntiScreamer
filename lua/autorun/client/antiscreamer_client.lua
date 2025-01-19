@@ -23,7 +23,7 @@ local mods              = engine.GetAddons()
 local ignoreList        = {}
 
 
-// Read ignore list (LOCAL DOWNLOAD ONLY)
+// Read ignore list (GITHUB DOWNLOAD ONLY)
 if ignoreListFileName != "IGNORELISTFILENAME_CHANGEME" and !isWorkshop then
     print("Anti-Screamer: Reading Ignore List... (".. ignoreListFileName ..")")
     local readList = file.Read(ignoreListFileName,"DATA")
@@ -333,7 +333,7 @@ local function CreateStackViewer(delayRefresh)
         menu:AddOption("Copy Name",function() SetClipboardText(node:GetText()) end)
         if node.Addon then
             menu:AddOption("Add to Ignore List",function() 
-                if isWorkshop then notification.AddLegacy("Feature is local download only for security reasons! Visit the workshop page to learn more.",NOTIFY_ERROR,6) return end
+                if isWorkshop then notification.AddLegacy("Feature is Github version only for security reasons! Visit the workshop page to learn more.",NOTIFY_ERROR,6) return end
                 notification.AddLegacy(node.Addon .. " added to ignore list. (You may see it's entry for 10 more seconds)",NOTIFY_HINT,6)
                 ignoreList[node.Addon] = true
                 if IsValid(framesToClose.ignoredModsFrame) then framesToClose.ignoredModsFrame.fillList() end
