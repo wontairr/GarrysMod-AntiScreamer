@@ -79,6 +79,14 @@ local fileBlackList = {
     ["screamer.lua"]                    = true
 }
 
+local libraryIcons = {
+    ["surface"]     = "icon16/picture_edit.png",
+    ["draw"]        = "icon16/picture_edit.png",
+    ["render"]      = "icon16/picture_edit.png",
+    ["sound"]       = "icon16/sound.png",
+    ["file"]        = "icon16/page_edit.png"
+}
+
 local functionsToOverride = {
     ["Surface"] = 
     {
@@ -181,14 +189,13 @@ end
 
 local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,libraryName)
     local source      = info.source or "Unknown Source"
-
-
+    
     local returnOriginalFunction = false 
     returnOriginalFunction =  string.find(source,fileName) 
     or string.find(source,"@lua/derma") 
     or string.find(source,"@lua/vgui") 
     or string.find(source,"@lua/skins/default")
-
+    
     if returnOriginalFunction then 
         return originalFunction(unpack(argsIn)) 
     end
@@ -198,7 +205,7 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,lib
     if ignoreList[shortSource] then return nil end
     
     local foundAddonName = nil
-
+    
     for _,mod in ipairs(lastUpdatedMods) do
         if file.Exists(shortSource,mod) then
             foundAddonName = mod
@@ -206,10 +213,11 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,lib
     end
     
     local identifier = util.SHA256(source .. funcName)
-
+    
     if not stack[funcName] then
         stack[funcName] = {}
     end
+    stack[funcName].library = libraryName
 
     local sus = {"","",IMPORTANCE.LOW}
 
@@ -242,6 +250,7 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,lib
         suspicious  = sus,
         addonName   = foundAddonName or nil
     }
+   
     //print("Added to stack:", funcName, identifier)
     //PrintTable(stack)
     return nil
@@ -461,6 +470,14 @@ local function CreateStackViewer(delayRefresh)
         lastStackCount = #stack
         for funcName,funcStack in pairs(stack) do
             count = count + 1
+            local icon = "icon16/application_osx_terminal.png"
+            if libraryIcons[funcStack.library] then 
+                icon = libraryIcons[funcStack.library] 
+            else
+                icon = "icon16/application_osx_terminal.png"
+            end
+            // CODE ABOVE DOESNT WORK CAUSE GMOD HATES ME
+
             local node = AddNodeSpecial(funcName,"icon16/application_osx_terminal.png",stackTree, "funcNode_" .. count )
             node.isFuncNode = true
             local count2 = 0
@@ -489,11 +506,11 @@ local function CreateStackViewer(delayRefresh)
                     addon = short
                 end
                 local args      = stackInfo.args or {}
-                local sus       = stackInfo.suspicious or {"",""}
+                local sus       = stackInfo.suspicious or {"","",0}
 
 
                 // Addon name tree
-                local addonNode = AddNodeSpecial("Addon: " .. addon,"icon16/bricks.png",node,"addonNode" .. idTail)
+                local addonNode = AddNodeSpecial("Addon: " .. addon,sus[3] != IMPORTANCE.HIGH and "icon16/bricks.png" or "icon16/bullet_error.png",node,"addonNode" .. idTail)
                 addonNode.Addon = stackInfo.shortSource
                 // Time since it was called
                 AddNodeSpecial(string.format("%.1f", CurTime() - time) .. " seconds ago...","icon16/clock.png",addonNode, "time"  .. idTail)
@@ -530,6 +547,10 @@ local function CreateStackViewer(delayRefresh)
 
     if delayRefresh then
         timer.Simple(1.0,function()
+            if !IsValid(stackTree) then return end
+            stackTree.RefreshTree()
+        end)
+        timer.Simple(3.0,function()
             if !IsValid(stackTree) then return end
             stackTree.RefreshTree()
         end)
