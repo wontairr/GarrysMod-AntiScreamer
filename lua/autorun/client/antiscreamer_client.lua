@@ -775,7 +775,7 @@ end
 asHelpText = [[
 Stack Viewer 101:
 
-Using the stack viewer, you are able to see what drawing/sound functions have been called recently.
+Using the stack viewer, you are able to see what drawing/sound/etc functions have been called recently.
 The tree starts with function names, then inside are all the addons that are calling that function with extra details.
     
 These functions that are watched are not malicious by themselves, but can be used to display/play screamers.
@@ -784,6 +784,7 @@ The stack viewer will mark a function (and the addon that calls it) as suspiciou
 
     - Calls the function more than once in a second
     - Uses the screen width or height as an argument
+    - Is being called by a script file with a blacklisted name.
 
 ]]
 asHelpText2 = [[
