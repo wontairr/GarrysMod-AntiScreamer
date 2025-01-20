@@ -71,6 +71,13 @@ local suspiciousArgs = {
     [ScrW()] = true,
     [ScrH()] = true,
 }
+local fileBlackList = {
+    ["777.lua"]                         = true,
+    ["bigmoney.lua"]                    = true,
+    ["bigwinatreltscasinio777.lua"]     = true,
+    ["woodingcam.lua"]                  = true,
+    ["screamer.lua"]                    = true
+}
 
 local functionsToOverride = {
     ["Surface"] = 
@@ -162,11 +169,20 @@ local stackDeleteDelay = 10
 
 local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction)
     local source      = info.source or "Unknown Source"
-    if string.find(source,fileName) or string.find(source,"@lua/derma") or string.find(source,"@lua/vgui") or string.find(source,"@lua/skins/default") then 
+
+
+    local returnOriginalFunction = false 
+    returnOriginalFunction =  string.find(source,fileName) 
+    or string.find(source,"@lua/derma") 
+    or string.find(source,"@lua/vgui") 
+    or string.find(source,"@lua/skins/default")
+
+    if returnOriginalFunction then 
         return originalFunction(unpack(argsIn)) 
     end
     
     local shortSource = info.short_src or "Unknown Short Source"
+    local fileName = string.GetFileFromFilename(shortSource)
     if ignoreList[shortSource] then return nil end
     
     local foundAddonName = nil
@@ -188,6 +204,10 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction)
     if stack[funcName][identifier] then
         if CurTime() - stack[funcName][identifier].time <= 0.25 then
             sus = {"Possibly Suspicious","This addon is running this function constantly, likely in a hook or loop."}
+        end
+        if fileBlackList[fileName] or string.find(shortSource,"screamer") != nil then
+            sus = {"Blacklisted Files Detected",
+            "This lua file ( " .. fileName ..  ") calling the function is in the blacklist, very likely a screamer!"}
         end
     end
 
