@@ -797,7 +797,7 @@ It is up to you to determine if a mod is trying to display a screamer. Here are 
     - If an entity mod/weapon mod/etc is calling drawing functions, it could be suspicious (HUD mods for example shouldn't be suspicious, since they rely on these functions)
 ]]
 
-list.Set( "DesktopWindows", "My Custom Context Menu Icon", {
+list.Set( "DesktopWindows", "Stack Viewer Icon Button", {
 	title = "Anti-Screamer Stack Viewer",
 	icon = "icon64/icon_antiscreamer.png",
 	init = function( icon, window )
