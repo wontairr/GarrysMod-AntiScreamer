@@ -8,12 +8,24 @@ local fileName                  = "antiscreamer_client.lua"
 -- You need to change the name of this to something unique and make sure it ends with .txt
 local ignoreListFileName        = "IGNORELISTFILENAME_CHANGEME"
 -- You need to change the name of this to something unique.
-local thinkHookName             = "AntiScreamer_Think_" .. math.random(1, 1000000)
+local thinkHookName             = "AntiScreamer_Think_"
 -- This command opens the stack viewer
 local StackViewerConsoleCommand = "antiscreamer_stackviewer"
 
 //\\ YOU MUST NOT REMOVE THE QUOTES //
 -- 🚨 ^^^ CHANGE ABOVE ^^^ 🚨 --
+
+local function genRandomString()
+    local letters = "abcdefghijklmnopqrstuvwxyz"
+    local randomString = ""
+    for i = 1, 16 do
+        local index = math.random(1, #letters)
+        randomString = randomString .. letters:sub(index, index)
+    end
+    return randomString
+end
+
+thinkHookName = thinkHookName .. genRandomString()
 
 local isWorkshop = string.find(debug.getinfo(1,"S").short_src,"addons/") != 1
 
@@ -89,6 +101,17 @@ local functionsToOverride = {
         "PlayFile",
         "PlayURL"
     },
+    ["Debug"] = 
+    {
+        "getinfo"
+    },
+    ["File"]  =
+    {
+      "Write",
+      "Delete",  
+      "Rename",
+      "Append"
+    },
     ["Global"] = 
     {
         "EmitSound",
@@ -101,6 +124,8 @@ local originalFuncs = {
     ["Render"]      = {},
     ["Draw"]        = {},
     ["Sound"]       = {},
+    ["Debug"]       = {},
+    ["File"]        = {},
     ["Global"]      = {}
 }
 
@@ -119,6 +144,12 @@ for _,funcName in ipairs(functionsToOverride["Sound"]) do
 end
 for _,funcName in ipairs(functionsToOverride["Global"]) do
     originalFuncs["Global"][funcName] = _G[funcName]
+end
+for _,funcName in ipairs(functionsToOverride["Debug"]) do
+    originalFuncs["Debug"][funcName] = debug[funcName]
+end
+for _,funcName in ipairs(functionsToOverride["File"]) do
+    originalFuncs["File"][funcName] = file[funcName]
 end
 
 // Holds data about functions that were ran.
@@ -178,7 +209,7 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction)
 end
 
 local function AntiScreamer_OverrideFunc(funcName,argsIn,originalFunction)
-    local debugInfo = debug.getinfo(2,"Sn")
+    local debugInfo = originalFuncs.Debug.getinfo(2,"Sn")
     return AntiScreamer_AddToStack(debugInfo,funcName,argsIn,originalFunction)
 end
 // OVERRIDE
@@ -195,6 +226,12 @@ local function AntiScreamer_OverrideBaseFunctions()
     end
     for _,funcName in ipairs(functionsToOverride.Draw) do
         draw[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Draw[funcName]) end
+    end
+    for _,funcName in ipairs(functionsToOverride.Debug) do
+        debug[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Debug[funcName]) end
+    end
+    for _,funcName in ipairs(functionsToOverride.File) do
+        file[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.File[funcName]) end
     end
     for _,funcName in ipairs(functionsToOverride.Global) do
         _G[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Global[funcName]) end
@@ -215,6 +252,12 @@ local function AntiScreamer_ResetBaseFunctions()
     end
     for _,funcName in ipairs(functionsToOverride.Draw) do
         draw[funcName] = originalFuncs.Draw[funcName]
+    end
+    for _,funcName in ipairs(functionsToOverride.Debug) do
+        debug[funcName] = originalFuncs.Debug[funcName]
+    end
+    for _,funcName in ipairs(functionsToOverride.File) do
+        file[funcName] = originalFuncs.File[funcName]
     end
     for _,funcName in ipairs(functionsToOverride.Global) do
         _G[funcName] = originalFuncs.Global[funcName]
@@ -339,7 +382,7 @@ local function CreateStackViewer(delayRefresh)
                 if IsValid(framesToClose.ignoredModsFrame) then framesToClose.ignoredModsFrame.fillList() end
                 stackTree:Clear() nodeCache = {}
                 stackTree.RefreshTree() 
-                file.Write(ignoreListFileName,util.TableToJSON(ignoreList,false))
+                originalFuncs.File.Write(ignoreListFileName,util.TableToJSON(ignoreList,false))
             end)
         end
         menu:Open()
@@ -689,7 +732,7 @@ optionsButtonMenu = function(self)
                     button:Remove() 
                     ignoreList[path] = nil
                     if not string.EndsWith(ignoreListFileName,".txt") or isWorkshop then
-                        file.Write(ignoreListFileName,util.TableToJSON(ignoreList,false))
+                        originalFuncs.File.Write(ignoreListFileName,util.TableToJSON(ignoreList,false))
                     end
                 end
             end
