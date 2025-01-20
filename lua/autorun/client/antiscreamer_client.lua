@@ -313,6 +313,16 @@ local function AntiScreamer_Timer_HookValidator()
 
 end
 
+local function AntiScreamer_Toggle()
+    enabled = !enabled
+    if enabled then
+        AntiScreamer_Timer_HookValidator()
+    else
+        AntiScreamer_ResetBaseFunctions()
+        timer.Remove(validationTimerName)
+    end
+end
+
 
 // Creates hook
 AntiScreamer_Timer_HookValidator()
@@ -607,8 +617,16 @@ local function CreateStackViewer(delayRefresh)
     optionsButton:Dock(RIGHT)
     optionsButton:DockMargin(0,0,0,0)
     optionsButton:SetText("Options")
+    optionsButton:SetTooltip("Hold SHIFT while clicking to quick-toggle the Anti-Screamer.")
 
-    optionsButton.DoClick = optionsButtonMenu
+    optionsButton.DoClick = function()
+        if input.IsKeyDown(KEY_LSHIFT) then
+            AntiScreamer_Toggle()
+            notification.AddLegacy("Anti-Screamer is " .. (enabled and "ON" or "OFF"),(enabled and NOTIFY_GENERIC or NOTIFY_ERROR),3)
+        else
+            optionsButtonMenu()
+        end
+    end
     ---------------------------------------------------------------
     
 end
@@ -633,15 +651,9 @@ optionsButtonMenu = function(self)
     enableDisableButton:SetColor(enabled and Color(25,160,75) or Color(161,35,62))
     enableDisableButton:SetText(enabled and "Enabled" or "Disabled")
     enableDisableButton.DoClick = function()
-        enabled = !enabled
+        AntiScreamer_Toggle()
         enableDisableButton:SetText(enabled and "Enabled" or "Disabled")
         enableDisableButton:SetColor(enabled and Color(25,160,75) or Color(161,35,62))
-        if enabled then
-            AntiScreamer_Timer_HookValidator()
-        else
-            AntiScreamer_ResetBaseFunctions()
-            timer.Remove(validationTimerName)
-        end
     end
     ---------------------------------------------------------------
 
