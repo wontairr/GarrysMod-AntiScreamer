@@ -386,6 +386,7 @@ local function CreateStackViewer(delayRefresh)
     frame:Center()
     frame:SetTitle("Anti-Screamer Stack Viewer")
     frame:MakePopup()
+    frame:SetSkin("Default")
 
     if delayRefresh == nil then delayRefresh = false end
 
@@ -393,6 +394,7 @@ local function CreateStackViewer(delayRefresh)
     stackTree.Expand = false
     stackTree.DoRightClick = function(self,node)
         local menu = DermaMenu()
+        menu:SetSkin("Default")
         menu:AddOption("Copy Name",function() SetClipboardText(node:GetText()) end)
         if node.Addon then
             menu:AddOption("Add to Ignore List",function() 
@@ -553,6 +555,7 @@ local function CreateStackViewer(delayRefresh)
         helpFrame:SetSize(600,800) 
         helpFrame:Center() helpFrame:SetPos(helpFrame:GetPos() - 150)
         helpFrame:MakePopup()
+        helpFrame:SetSkin("Default")
         ---------------------------------------------------------------
 
         local whiteBG = vgui.Create("DPanel",helpFrame)
@@ -618,6 +621,7 @@ optionsButtonMenu = function(self)
     optionsFrame:Center()
     optionsFrame:SetPos(optionsFrame:GetX() + 200,optionsFrame:GetY() + 70)
     optionsFrame:MakePopup()
+    optionsFrame:SetSkin("Default")
     ---------------------------------------------------------------
     
 
@@ -653,6 +657,7 @@ optionsButtonMenu = function(self)
         modsFrame:Center()
         modsFrame:SetPos(optionsFrame:GetPos() + 400)
         modsFrame:MakePopup()
+        modsFrame:SetSkin("Default")
         ---------------------------------------------------------------
 
         ---------------------------------------------------------------
@@ -738,6 +743,7 @@ optionsButtonMenu = function(self)
         modsFrame:Center()
         modsFrame:SetPos(optionsFrame:GetPos() + 400)
         modsFrame:MakePopup()
+        modsFrame:SetSkin("Default")
         
         local modsList = vgui.Create("DScrollPanel", modsFrame)
         modsList:Dock(FILL)
