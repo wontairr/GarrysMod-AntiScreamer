@@ -136,6 +136,13 @@ local originalFuncs = {
     ["Global"]      = {}
 }
 
+local IMPORTANCE = {
+    LOW     = 0,
+    NORMAL  = 1,
+    MEDIUM  = 2,
+    HIGH    = 3
+}
+
 // Fill original functions for later restoration and use
 for _,funcName in ipairs(functionsToOverride["Surface"]) do
     originalFuncs["Surface"][funcName] = surface[funcName]
@@ -167,7 +174,12 @@ local stack = {
 // How long until a stack item is deleted
 local stackDeleteDelay = 10
 
-local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction)
+local function SetSuspicious(preSus,newSus)
+    // return preSus if newSus importance is less otherwise newsus
+    return preSus[3] > newSus[3] and preSus or newSus
+end
+
+local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,libraryName)
     local source      = info.source or "Unknown Source"
 
 
@@ -199,16 +211,23 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction)
         stack[funcName] = {}
     end
 
-    local sus = {"",""}
+    local sus = {"","",IMPORTANCE.LOW}
 
     if stack[funcName][identifier] then
         if CurTime() - stack[funcName][identifier].time <= 0.25 then
-            sus = {"Possibly Suspicious","This addon is running this function constantly, likely in a hook or loop."}
+            sus = SetSuspicious(sus,{
+                "Possibly Suspicious",
+                "This addon is running this function constantly, likely in a hook or loop.",
+                IMPORTANCE.LOW
+            })
         end
-        if fileBlackList[fileName] or string.find(shortSource,"screamer") != nil then
-            sus = {"Blacklisted Files Detected",
-            "This lua file ( " .. fileName ..  ") calling the function is in the blacklist, very likely a screamer!"}
-        end
+    end
+    if fileBlackList[fileName] or string.find(shortSource,"screamer") != nil then
+        sus = SetSuspicious(sus,{
+            "Blacklisted Files Detected",
+            "This lua file ( " .. fileName ..  ") calling the function is in the blacklist, very likely a screamer!",
+            IMPORTANCE.HIGH
+        })
     end
 
     if funcName == "SetTexture" then
@@ -228,33 +247,33 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction)
     return nil
 end
 
-local function AntiScreamer_OverrideFunc(funcName,argsIn,originalFunction)
+local function AntiScreamer_OverrideFunc(funcName,argsIn,originalFunction,libraryName)
     local debugInfo = originalFuncs.Debug.getinfo(2,"Sn")
-    return AntiScreamer_AddToStack(debugInfo,funcName,argsIn,originalFunction)
+    return AntiScreamer_AddToStack(debugInfo,funcName,argsIn,originalFunction,libraryName)
 end
 // OVERRIDE
 local function AntiScreamer_OverrideBaseFunctions()
     if !enabled then return end
     for _,funcName in ipairs(functionsToOverride.Surface) do
-        surface[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Surface[funcName]) end
+        surface[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Surface[funcName],"surface") end
     end
     for _,funcName in ipairs(functionsToOverride.Render) do
-        render[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Render[funcName]) end
+        render[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Render[funcName],"render") end
     end 
     for _,funcName in ipairs(functionsToOverride.Sound) do
-        sound[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Sound[funcName]) end
+        sound[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Sound[funcName],"sound") end
     end
     for _,funcName in ipairs(functionsToOverride.Draw) do
-        draw[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Draw[funcName]) end
+        draw[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Draw[funcName],"draw") end
     end
     for _,funcName in ipairs(functionsToOverride.Debug) do
-        debug[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Debug[funcName]) end
+        debug[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Debug[funcName],"debug") end
     end
     for _,funcName in ipairs(functionsToOverride.File) do
-        file[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.File[funcName]) end
+        file[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.File[funcName],"file") end
     end
     for _,funcName in ipairs(functionsToOverride.Global) do
-        _G[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Global[funcName]) end
+        _G[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Global[funcName],"global") end
     end
 end
 // RETURN TO ORIGINAL
@@ -481,7 +500,13 @@ local function CreateStackViewer(delayRefresh)
                 // The arguments for the function call
                 local argsNode = AddNodeSpecial("Arguments","icon16/script_code.png",addonNode,"args" .. idTail,true)
                 for _,arg in ipairs(args) do
-                    if suspiciousArgs[arg] then sus = {"Suspicious","A suspicious argument was used to run this function: " .. tostring(arg)} end
+                    if suspiciousArgs[arg] then 
+                        sus = SetSuspicious(sus,{
+                            "Suspicious",
+                            "A suspicious argument was used to run this function: " .. tostring(arg),
+                            IMPORTANCE.LOW
+                        })
+                    end
                     AddNodeSpecial(tostring(arg),"icon16/shape_square.png",argsNode)
                 end
                 // full source if u want it
