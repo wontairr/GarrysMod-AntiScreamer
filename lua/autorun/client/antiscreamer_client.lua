@@ -863,6 +863,12 @@ list.Set( "DesktopWindows", "Stack Viewer Icon Button", {
 	end
 } )
 
+hook.Add("HUDPaint","AntiScreamer_Notify_" .. genRandomString(),function()
+    if enabled then
+        draw.SimpleText("Anti-Screamer is currently enabled. Please finish checking the Stack-Viewer then disable it in it's options.","Trebuchet24",5,ScrH(),Color(255,0,0,255),TEXT_ALIGN_LEFT,TEXT_ALIGN_BOTTOM)
+    end
+end)
+
 // Remove the "--" from the line below to be able to open the stack viewer with a console command (CHANGE THE CONSOLE COMMAND NAME AT THE TOP)
 
 --concommand.Add(StackViewerConsoleCommand,CreateStackViewer)
