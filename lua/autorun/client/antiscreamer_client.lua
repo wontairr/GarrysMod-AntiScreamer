@@ -470,13 +470,17 @@ local function CreateStackViewer(delayRefresh)
         lastStackCount = #stack
         for funcName,funcStack in pairs(stack) do
             count = count + 1
+            local library = funcStack.library or ""
+
             local icon = "icon16/application_osx_terminal.png"
-            if libraryIcons[funcStack.library] then 
-                icon = libraryIcons[funcStack.library] 
+            if libraryIcons[library] then 
+                icon = libraryIcons[library] 
             else
                 icon = "icon16/application_osx_terminal.png"
             end
             // CODE ABOVE DOESNT WORK CAUSE GMOD HATES ME
+
+            if library != "file" then library = "" end
 
             local node = AddNodeSpecial(funcName,"icon16/application_osx_terminal.png",stackTree, "funcNode_" .. count )
             node.isFuncNode = true
@@ -538,7 +542,7 @@ local function CreateStackViewer(delayRefresh)
                     lastNode = AddNodeSpecial(part,"icon16/folder.png",lastNode)
                 end
                 
-                node.Label:SetText(funcName .. " (".. sus[1] ..")")
+                node.Label:SetText(library .. ((#library > 0) and "." or "") .. funcName .. " (".. sus[1] ..")")
                 addonNode.Label:SetText(addonNode.Label:GetValue() .. " (".. sus[1] ..")")
                 addonNode:SetTooltip(sus[2])
             end
@@ -547,10 +551,6 @@ local function CreateStackViewer(delayRefresh)
 
     if delayRefresh then
         timer.Simple(1.0,function()
-            if !IsValid(stackTree) then return end
-            stackTree.RefreshTree()
-        end)
-        timer.Simple(3.0,function()
             if !IsValid(stackTree) then return end
             stackTree.RefreshTree()
         end)
