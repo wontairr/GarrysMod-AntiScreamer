@@ -411,6 +411,7 @@ local asHelpText = ""
 local asHelpText2 = ""
 
 local optionsButtonMenu = function(self) end
+local showUpdatedModsWindow = function(self) end
 
 local lastStackCount = 0
 
@@ -663,18 +664,106 @@ local function CreateStackViewer(delayRefresh)
     optionsButton:Dock(RIGHT)
     optionsButton:DockMargin(0,0,0,0)
     optionsButton:SetText("Options")
-    optionsButton:SetTooltip("Hold SHIFT while clicking to quick-toggle the Anti-Screamer.")
+    optionsButton:SetTooltip("Hold SHIFT while clicking to quick-toggle the Anti-Screamer.\nHold SHIFT while RIGHT clicking to see updated addons")
 
-    optionsButton.DoClick = function()
-        if input.IsKeyDown(KEY_LSHIFT) then
-            AntiScreamer_Toggle()
-            notification.AddLegacy("Anti-Screamer is " .. (enabled and "ON" or "OFF"),(enabled and NOTIFY_GENERIC or NOTIFY_ERROR),3)
-        else
-            optionsButtonMenu()
+
+    optionsButton.OnMousePressed = function(self,mouse)
+        if mouse == MOUSE_RIGHT then
+            if input.IsKeyDown(KEY_LSHIFT) then
+                showUpdatedModsWindow(nil, optionsButton)
+            end
+        elseif mouse == MOUSE_LEFT then
+            if input.IsKeyDown(KEY_LSHIFT) then
+                AntiScreamer_Toggle()
+                notification.AddLegacy("Anti-Screamer is " .. (enabled and "ON" or "OFF"),(enabled and NOTIFY_GENERIC or NOTIFY_ERROR),3)
+            else
+                optionsButtonMenu()
+            end
         end
     end
     ---------------------------------------------------------------
     
+end
+
+showUpdatedModsWindow = function(self,panel)
+    if IsValid(framesToClose.modsFrame) then return end
+    ---------------------------------------------------------------
+    local modsFrame = vgui.Create("DFrame") framesToClose.modsFrame = modsFrame
+    modsFrame:SetTitle("Last Updated Addons")
+    modsFrame:SetSize(400,600)
+    modsFrame:Center()
+    modsFrame:SetPos(panel:GetPos() + 400)
+    modsFrame:MakePopup()
+    modsFrame:SetSkin("Default")
+    ---------------------------------------------------------------
+
+    ---------------------------------------------------------------
+    local topPanel = vgui.Create("DPanel",modsFrame)
+    topPanel:SetPos(0,25)
+    topPanel:SetTall(45)
+    topPanel:SetWide(400)
+    ---------------------------------------------------------------
+    
+    local maxDays = vgui.Create("DNumberWang",topPanel) 
+    maxDays:SetMinMax(0,1500)
+    maxDays:SetPos(90,14)
+    maxDays:SetValue(modListMaxDays)
+    local label = vgui.Create("DLabel",topPanel) label:SetText("Max Days Ago: ") 
+    label:SetPos(5,18) label:SizeToContents() label:SetDark(true)
+    
+    local modsList = nil
+
+
+    local function fillModsList()
+        modsList:Clear()
+        lastUpdatedMods = {}
+        for _,mod in ipairs(mods) do
+            if !mod.mounted then continue end
+            local diffInSeconds = os.time() - mod.updated
+            local daysAgo = math.floor(diffInSeconds / (24 * 60 * 60))
+            if daysAgo > modListMaxDays then continue end
+            
+            table.insert(lastUpdatedMods,mod.title)
+
+            local modId = tostring(mod.wsid)
+
+            local modButton = modsList:Add("DButton")
+            modButton:Dock(TOP)
+            modButton:DockMargin( 0, 0, 0, 5 )
+            modButton:SetContentAlignment(6)
+            modButton:SetText(mod.title .. "\n\n(" .. daysAgo .. " days ago)")
+            modButton.DoClick = function()
+                steamworks.ViewFile(mod.wsid)
+            end
+
+            local modIcon = vgui.Create("DImage",modButton)
+            modIcon:SetPos(40,10)
+            local iconMat = nil
+
+            // Get Addon Icon and put it on the mod button.
+            steamworks.FileInfo( mod.wsid, function( result )
+                steamworks.Download( result.previewid, true, function( name )
+                    iconMat = AddonMaterial( name )
+                    if iconMat == nil then
+                        iconMat = Material("icon16/bricks.png")
+                    end
+                    if IsValid(modIcon) then modIcon:SetMaterial(iconMat) end
+                    
+                end)
+            end)
+ 
+            modIcon:SetSize(60,60)
+            modButton:SetTall(80)
+        end
+    end
+    maxDays.OnValueChanged = function(self,val)
+        modListMaxDays = math.Clamp(val,0,1500)
+        fillModsList()
+    end
+    modsList = vgui.Create("DScrollPanel", modsFrame)
+    modsList:SetPos(0,75)
+    modsList:SetTall(520) modsList:SetWide(400)
+    fillModsList()
 end
 
 optionsButtonMenu = function(self) 
@@ -706,87 +795,7 @@ optionsButtonMenu = function(self)
     ---------------------------------------------------------------
     local viewUpdatedMods = vgui.Create("DButton",optionsList)
     viewUpdatedMods:SetText("View Updated Addons")
-    viewUpdatedMods.DoClick = function()
-        if IsValid(framesToClose.modsFrame) then return end
-        ---------------------------------------------------------------
-        local modsFrame = vgui.Create("DFrame") framesToClose.modsFrame = modsFrame
-        modsFrame:SetTitle("Last Updated Addons")
-        modsFrame:SetSize(400,600)
-        modsFrame:Center()
-        modsFrame:SetPos(optionsFrame:GetPos() + 400)
-        modsFrame:MakePopup()
-        modsFrame:SetSkin("Default")
-        ---------------------------------------------------------------
-
-        ---------------------------------------------------------------
-        local topPanel = vgui.Create("DPanel",modsFrame)
-        topPanel:SetPos(0,25)
-        topPanel:SetTall(45)
-        topPanel:SetWide(400)
-        ---------------------------------------------------------------
-        
-        local maxDays = vgui.Create("DNumberWang",topPanel) 
-        maxDays:SetMinMax(0,1500)
-        maxDays:SetPos(90,14)
-        maxDays:SetValue(modListMaxDays)
-        local label = vgui.Create("DLabel",topPanel) label:SetText("Max Days Ago: ") 
-        label:SetPos(5,18) label:SizeToContents() label:SetDark(true)
-        
-        local modsList = nil
-
-
-        local function fillModsList()
-            modsList:Clear()
-            lastUpdatedMods = {}
-            for _,mod in ipairs(mods) do
-                if !mod.mounted then continue end
-                local diffInSeconds = os.time() - mod.updated
-                local daysAgo = math.floor(diffInSeconds / (24 * 60 * 60))
-                if daysAgo > modListMaxDays then continue end
-                
-                table.insert(lastUpdatedMods,mod.title)
-
-                local modId = tostring(mod.wsid)
-
-                local modButton = modsList:Add("DButton")
-                modButton:Dock(TOP)
-                modButton:DockMargin( 0, 0, 0, 5 )
-                modButton:SetContentAlignment(6)
-                modButton:SetText(mod.title .. "\n\n(" .. daysAgo .. " days ago)")
-                modButton.DoClick = function()
-                    steamworks.ViewFile(mod.wsid)
-                end
-
-                local modIcon = vgui.Create("DImage",modButton)
-                modIcon:SetPos(40,10)
-                local iconMat = nil
-
-                // Get Addon Icon and put it on the mod button.
-                steamworks.FileInfo( mod.wsid, function( result )
-                    steamworks.Download( result.previewid, true, function( name )
-                        iconMat = AddonMaterial( name )
-                        if iconMat == nil then
-                            iconMat = Material("icon16/bricks.png")
-                        end
-                        if IsValid(modIcon) then modIcon:SetMaterial(iconMat) end
-                        
-                    end)
-                end)
-     
-                modIcon:SetSize(60,60)
-                modButton:SetTall(80)
-            end
-        end
-        maxDays.OnValueChanged = function(self,val)
-            modListMaxDays = math.Clamp(val,0,1500)
-            fillModsList()
-        end
-        modsList = vgui.Create("DScrollPanel", modsFrame)
-        modsList:SetPos(0,75)
-        modsList:SetTall(520) modsList:SetWide(400)
-        fillModsList()
-
-    end
+    viewUpdatedMods.DoClick = function(self) showUpdatedModsWindow(self,optionsFrame) end
     ---------------------------------------------------------------
 
     ---------------------------------------------------------------
