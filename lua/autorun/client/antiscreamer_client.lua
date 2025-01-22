@@ -5,12 +5,18 @@ print("Anti-Screamer: Client Loaded")
 
 -- Change this to the filename this script is in.
 local fileName                  = "antiscreamer_client.lua"
+
 -- You need to change the name of this to something unique and make sure it ends with .txt
 local ignoreListFileName        = "IGNORELISTFILENAME_CHANGEME"
+
 -- You need to change the name of this to something unique.
 local thinkHookName             = "AntiScreamer_Think_"
--- This command opens the stack viewer
+
+-- This command opens the stack viewer (scroll down to the very bottom to uncomment the concommand)
 local StackViewerConsoleCommand = "antiscreamer_stackviewer"
+
+-- This command will disable the antiscreamer the next time you start up a map. ofcourse making the mod obsolete but it's useful.
+local AntiScreamerDisableCommand = "antiscreamer_changeme"
 
 //\\ YOU MUST NOT REMOVE THE QUOTES //
 -- 🚨 ^^^ CHANGE ABOVE ^^^ 🚨 --
@@ -353,7 +359,14 @@ end
 
 
 // Creates hook
-AntiScreamer_Timer_HookValidator()
+
+if not isWorkshop and AntiScreamerDisableCommand != "antiscreamer_changeme" and GetConVar(AntiScreamerDisableCommand):GetBool() == false then
+    print("!!WARNING!! VVV")
+    print("!!>>>>>>>!! Anti-Screamer is disabled via the command: '" .. AntiScreamerDisableCommand .. "'")
+    print("!!WARNING!! ^^^")
+else
+    AntiScreamer_Timer_HookValidator()
+end
 // Stops any possible screamer sounds that autorun instantly
 timer.Simple(0,function()
     RunConsoleCommand("stopsound")
@@ -878,9 +891,16 @@ hook.Add("HUDPaint","AntiScreamer_Notify_" .. genRandomString(),function()
     end
 end)
 
-// Remove the "--" from the line below to be able to open the stack viewer with a console command (CHANGE THE CONSOLE COMMAND NAME AT THE TOP)
-
+// Remove the "--" from the line below to be able to *open the stack viewer* with a console command (CHANGE THE CONSOLE COMMAND NAME AT THE TOP)
 --concommand.Add(StackViewerConsoleCommand,CreateStackViewer)
+
+// !!🚨 ** ABOVE AND BELOW COMMANDS ARE DIFFERENT ** 🚨!! \\
+
+// Remove the "--" from the line below to be able to *disable the antiscreamer* with a console command (CHANGE THE CONSOLE COMMAND NAME AT THE TOP)
+--CreateClientConVar(AntiScreamerDisableCommand,"0",true,false,"Toggles the Anti-Screamer on map start (REQUIRES MAP RESTART)",0,1)
+
+
+
 
 
 // Remove the code below if you don't want it to open on map start.
