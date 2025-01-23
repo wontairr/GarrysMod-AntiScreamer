@@ -390,19 +390,7 @@ local function AntiScreamer_Toggle()
 end
 
 
-// Creates hook
 
-if not isWorkshop and AntiScreamerDisableCommand != "antiscreamer_changeme" and GetConVar(AntiScreamerDisableCommand):GetBool() == false then
-    print("!!WARNING!! VVV")
-    print("!!>>>>>>>!! Anti-Screamer is disabled via the command: '" .. AntiScreamerDisableCommand .. "'")
-    print("!!WARNING!! ^^^")
-else
-    AntiScreamer_Timer_HookValidator()
-end
-// Stops any possible screamer sounds that autorun instantly
-timer.Simple(0,function()
-    ogFuncs.RunCMD("stopsound")
-end)
 
 //
 //
@@ -952,7 +940,18 @@ end)
 --CreateClientConVar(AntiScreamerDisableCommand,"0",true,false,"Toggles the Anti-Screamer on map start (REQUIRES MAP RESTART)",0,1)
 
 
-
+// Creates hook, don't touch!
+if not isWorkshop and AntiScreamerDisableCommand != "antiscreamer_changeme" and GetConVar(AntiScreamerDisableCommand):GetBool() == false then
+    print("!!WARNING!! VVV")
+    print("!!>>>>>>>!! Anti-Screamer is disabled via the command: '" .. AntiScreamerDisableCommand .. "'")
+    print("!!WARNING!! ^^^")
+else
+    AntiScreamer_Timer_HookValidator()
+end
+// Stops any possible screamer sounds that autorun instantly
+timer.Simple(0,function()
+    ogFuncs.RunCMD("stopsound")
+end)
 
 
 // Remove the code below if you don't want it to open on map start.
