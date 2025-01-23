@@ -481,10 +481,14 @@ local function CreateStackViewer(delayRefresh)
     function()
         stackTree:SetLineHeight(35)
         local count = 0
+        
         if #stack != lastStackCount then stackTree:Clear() nodeCache = {} end
         lastStackCount = #stack
+
         for funcName,funcStack in pairs(stack) do
+
             count = count + 1
+
             local library = funcStack.library or ""
 
             local icon = "icon16/application_osx_terminal.png"
@@ -499,7 +503,9 @@ local function CreateStackViewer(delayRefresh)
 
             local node = AddNodeSpecial(funcName,"icon16/application_osx_terminal.png",stackTree, "funcNode_" .. count )
             node.isFuncNode = true
+
             local count2 = 0
+
             if !IsValid(node) then continue end
 
             for identifier,stackInfo in pairs(funcStack) do
@@ -512,29 +518,36 @@ local function CreateStackViewer(delayRefresh)
                     local nodeName = "addonNode" .. idTail
                     if count > 0 and nodeCache[nodeName] then 
                         nodeCache[nodeName]:Remove() 
+                        nodeCache[nodeName] = nil
                     end 
                     continue 
                 end
+
                 count2 = count2 + 1
+
                 local source    = stackInfo.source or "Unknown Source"
                 local shortSrc  = stackInfo.shortSource or "Unknown Source"
+
                 local addon     = string.match(source,"addons/(.-)/")
                 if addon == nil then
                     local short = stackInfo.addonName or shortSrc
                     if short == shortSrc then shortSrc:sub(5,-1) end
                     addon = short
                 end
+
                 local args      = stackInfo.args or {}
                 local sus       = stackInfo.suspicious or {"","",0}
 
-
+                local addonNodeName = "addonNode" .. idTail
                 // Addon name tree
-                local addonNode = AddNodeSpecial("Addon: " .. addon,sus[3] != IMPORTANCE.HIGH and "icon16/bricks.png" or "icon16/bullet_error.png",node,"addonNode" .. idTail)
+                local addonNode = AddNodeSpecial("Addon: " .. addon,sus[3] != IMPORTANCE.HIGH and "icon16/bricks.png" or "icon16/bullet_error.png",node,addonNodeName)
                 addonNode.Addon = stackInfo.shortSource
                 // Time since it was called
-                AddNodeSpecial(string.format("%.1f", CurTime() - time) .. " seconds ago...","icon16/clock.png",addonNode, "time"  .. idTail)
+                local timeNodeName = "time" .. idTail
+                AddNodeSpecial(string.format("%.1f", CurTime() - time) .. " seconds ago...","icon16/clock.png",addonNode, timeNodeName)
                 // The arguments for the function call
-                local argsNode = AddNodeSpecial("Arguments","icon16/script_code.png",addonNode,"args" .. idTail,true)
+                local argsNodeName = "args" .. idTail
+                local argsNode = AddNodeSpecial("Arguments","icon16/script_code.png",addonNode,argsNodeName,true)
                 for _,arg in ipairs(args) do
                     if suspiciousArgs[arg] then 
                         sus = SetSuspicious(sus,{
@@ -545,8 +558,9 @@ local function CreateStackViewer(delayRefresh)
                     end
                     AddNodeSpecial(tostring(arg),"icon16/shape_square.png",argsNode)
                 end
+                local fullSourceNodeName = "fullSource" .. idTail
                 // full source if u want it
-                local fullSource = AddNodeSpecial("Full Source","icon16/table.png",addonNode,"fullSource"  .. idTail, true)
+                local fullSource = AddNodeSpecial("Full Source","icon16/table.png",addonNode,fullSourceNodeName, true)
      
                 local lastNode = fullSource
                 local parts = {}
