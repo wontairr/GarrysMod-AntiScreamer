@@ -202,6 +202,7 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,lib
     or string.find(source,"@lua/vgui") 
     or string.find(source,"@lua/skins/default")
     
+    
     if returnOriginalFunction then 
         return originalFunction(unpack(argsIn)) 
     end
@@ -622,7 +623,7 @@ local function CreateStackViewer(delayRefresh)
         ---------------------------------------------------------------
         local helpFrame = vgui.Create("DFrame") framesToClose.helpFrame = helpFrame
         helpFrame:SetTitle("Help")
-        helpFrame:SetSize(600,800) 
+        helpFrame:SetSize(615,800) 
         helpFrame:Center() helpFrame:SetPos(helpFrame:GetPos() - 150)
         helpFrame:MakePopup()
         helpFrame:SetSkin("Default")
@@ -871,10 +872,11 @@ asHelpText2 = [[
 Like the functions themselves, these things are not always malicious, but are used by screamers.
 
 It is up to you to determine if a mod is trying to display a screamer. Here are some tips:
-
     - Investigate the arguments used in the function.
     - Check how recent the addon was updated (Old mods that are updated recently could be suspicious)
     - If an entity mod/weapon mod/etc is calling drawing functions, it could be suspicious (HUD mods for example shouldn't be suspicious, since they rely on these functions)
+
+PS: Sometimes entries can appear to duplicate in the Stack-Viewer, click the "Clear" button to fix it.
 ]]
 
 list.Set( "DesktopWindows", "Stack Viewer Icon Button", {
