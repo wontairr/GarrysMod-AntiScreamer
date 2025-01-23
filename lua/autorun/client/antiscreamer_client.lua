@@ -46,7 +46,7 @@ if ignoreListFileName != "IGNORELISTFILENAME_CHANGEME" and !isWorkshop then
     print("Anti-Screamer: Reading Ignore List... (".. ignoreListFileName ..")")
     local readList = file.Read(ignoreListFileName,"DATA")
     if readList != nil and #readList > 1 then
-        ignoreList = ogFuncs.Util.JSONToTable(readList,false,true)
+        ignoreList = util.JSONToTable(readList,false,true)
         print("Anti-Screamer: Ignore List read successfully!")
     else
         print("Anti-Screamer: FAILED to read Ignore List!")
@@ -941,7 +941,7 @@ end)
 
 
 // Creates hook, don't touch!
-if not isWorkshop and AntiScreamerDisableCommand != "antiscreamer_changeme" and GetConVar(AntiScreamerDisableCommand):GetBool() == false then
+if not isWorkshop and AntiScreamerDisableCommand != "antiscreamer_changeme" and GetConVar(AntiScreamerDisableCommand):GetBool() == true then
     print("!!WARNING!! VVV")
     print("!!>>>>>>>!! Anti-Screamer is disabled via the command: '" .. AntiScreamerDisableCommand .. "'")
     print("!!WARNING!! ^^^")
