@@ -472,7 +472,7 @@ local function CreateStackViewer(delayRefresh)
         if node.Addon then
             menu:AddOption("Add to Ignore List",function() 
                 if isWorkshop then notification.AddLegacy("Feature is Github version only for security reasons! Visit the workshop page to learn more.",NOTIFY_ERROR,6) return end
-		if not ogFuncs.String.EndsWith(ignoreListFileName,".txt") then notification.AddLegacy("You need to set a proper ignore list file name! Needs to end with '.txt'",NOTIFY_ERROR,6) return end
+		        if not ogFuncs.String.EndsWith(ignoreListFileName,".txt") then notification.AddLegacy("You need to set a proper ignore list file name! Needs to end with '.txt'",NOTIFY_ERROR,6) return end
                 notification.AddLegacy(node.Addon .. " added to ignore list. (You may see it's entry for 10 more seconds)",NOTIFY_HINT,6)
                 ignoreList[node.Addon] = true
                 if ogFuncs.isValid(framesToClose.ignoredModsFrame) then framesToClose.ignoredModsFrame.fillList() end
@@ -878,7 +878,7 @@ optionsButtonMenu = function(self)
                 button.DoClick = function () 
                     button:Remove() 
                     ignoreList[path] = nil
-		    if ogFuncs.String.EndsWith(ignoreListFileName,".txt") and not isWorkshop then
+		            if ogFuncs.String.EndsWith(ignoreListFileName,".txt") and not isWorkshop then
                         originalFuncs.File.Write(ignoreListFileName,ogFuncs.Util.TableToJSON(ignoreList,false))
                     end
                 end
