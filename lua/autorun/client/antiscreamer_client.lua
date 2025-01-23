@@ -941,7 +941,7 @@ end)
 
 
 // Creates hook, don't touch!
-if not isWorkshop and AntiScreamerDisableCommand != "antiscreamer_changeme" and GetConVar(AntiScreamerDisableCommand):GetBool() == true then
+if AntiScreamerDisableCommand != "antiscreamer_changeme" and GetConVar(AntiScreamerDisableCommand):GetBool() == true then
     print("!!WARNING!! VVV")
     print("!!>>>>>>>!! Anti-Screamer is disabled via the command: '" .. AntiScreamerDisableCommand .. "'")
     print("!!WARNING!! ^^^")
@@ -962,4 +962,9 @@ local function lazyStartupCheck()
         timer.Simple(0.1,lazyStartupCheck)
     end
 end
-lazyStartupCheck()
+		
+if AntiScreamerDisableCommand != "antiscreamer_changeme" and GetConVar(AntiScreamerDisableCommand):GetBool() == true then
+    -- GENIUS CODE
+else
+    lazyStartupCheck()
+end
