@@ -15,7 +15,7 @@ local thinkHookName             = "AntiScreamer_Think_"
 -- This command opens the stack viewer (scroll down to the very bottom to uncomment the concommand)
 local StackViewerConsoleCommand = "antiscreamer_stackviewer"
 
--- This command will disable the antiscreamer the next time you start up a map. ofcourse making the mod obsolete but it's useful.
+-- This command will disable the antiscreamer the next time you start up a map. ofcourse making the mod obsolete but it's useful. (scroll down to the very bottom to uncomment the concommand)
 local AntiScreamerDisableCommand = "antiscreamer_changeme"
 
 //\\ YOU MUST NOT REMOVE THE QUOTES //
