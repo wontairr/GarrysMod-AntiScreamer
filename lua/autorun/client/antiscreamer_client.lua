@@ -46,7 +46,7 @@ if ignoreListFileName != "IGNORELISTFILENAME_CHANGEME" and !isWorkshop then
     print("Anti-Screamer: Reading Ignore List... (".. ignoreListFileName ..")")
     local readList = file.Read(ignoreListFileName,"DATA")
     if readList != nil and #readList > 1 then
-        ignoreList = util.JSONToTable(readList,false,true)
+        ignoreList = ogFuncs.Util.JSONToTable(readList,false,true)
         print("Anti-Screamer: Ignore List read successfully!")
     else
         print("Anti-Screamer: FAILED to read Ignore List!")
@@ -59,16 +59,15 @@ local lastUpdatedMods   = {}
 local modListMaxDays    = 16
 
 // lazy fill of lastupdatedmods
-timer.Simple(0,function()
-    for _,mod in ipairs(mods) do
-        if !mod.mounted then continue end
-        local diffInSeconds = os.time() - mod.updated
-        local daysAgo = math.floor(diffInSeconds / (24 * 60 * 60))
-        if daysAgo > modListMaxDays then continue end
+for _,mod in ipairs(mods) do
+    if !mod.mounted then continue end
+    local diffInSeconds = os.time() - mod.updated
+    local daysAgo = math.floor(diffInSeconds / (24 * 60 * 60))
+    if daysAgo > modListMaxDays then continue end
         
-        table.insert(lastUpdatedMods,mod.title)
-    end
-end)
+    table.insert(lastUpdatedMods,mod.title)
+end
+
 
 
 local enabled = true
@@ -140,6 +139,38 @@ local functionsToOverride = {
     }
 }
 
+
+local ogFuncs = {
+    Input = {
+        isKeyDown = input.IsKeyDown,
+    },
+    Util = {
+        SHA256 = util.SHA256,
+        TableToJSON = util.TableToJSON,
+        JSONToTable = util.JSONToTable,
+    },
+    Timer = {
+        Create = timer.Create,
+        Remove = timer.Remove,
+        Exists = timer.Exists,
+    },
+    String = {
+        find = string.find,
+        match = string.match,
+        gmatch = string.gmatch,
+    },
+    isValid = IsValid,
+    Ipairs = ipairs,
+    Pairs  = pairs,
+    curTime = CurTime,
+    unPack  = unpack,
+    RunCMD  = RunConsoleCommand,
+    VGUI = {
+        Create = vgui.Create,
+    }
+}
+
+
 local originalFuncs = {
     ["Surface"]     = {},
     ["Render"]      = {},
@@ -158,25 +189,25 @@ local IMPORTANCE = {
 }
 
 // Fill original functions for later restoration and use
-for _,funcName in ipairs(functionsToOverride["Surface"]) do
+for _,funcName in ogFuncs.Ipairs(functionsToOverride["Surface"]) do
     originalFuncs["Surface"][funcName] = surface[funcName]
 end
-for _,funcName in ipairs(functionsToOverride["Render"]) do
+for _,funcName in ogFuncs.Ipairs(functionsToOverride["Render"]) do
     originalFuncs["Render"][funcName] = render[funcName]
 end
-for _,funcName in ipairs(functionsToOverride["Draw"]) do
+for _,funcName in ogFuncs.Ipairs(functionsToOverride["Draw"]) do
     originalFuncs["Draw"][funcName] = draw[funcName]
 end
-for _,funcName in ipairs(functionsToOverride["Sound"]) do
+for _,funcName in ogFuncs.Ipairs(functionsToOverride["Sound"]) do
     originalFuncs["Sound"][funcName] = sound[funcName]
 end
-for _,funcName in ipairs(functionsToOverride["Global"]) do
+for _,funcName in ogFuncs.Ipairs(functionsToOverride["Global"]) do
     originalFuncs["Global"][funcName] = _G[funcName]
 end
-for _,funcName in ipairs(functionsToOverride["Debug"]) do
+for _,funcName in ogFuncs.Ipairs(functionsToOverride["Debug"]) do
     originalFuncs["Debug"][funcName] = debug[funcName]
 end
-for _,funcName in ipairs(functionsToOverride["File"]) do
+for _,funcName in ogFuncs.Ipairs(functionsToOverride["File"]) do
     originalFuncs["File"][funcName] = file[funcName]
 end
 
@@ -197,14 +228,14 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,lib
     local source      = info.source or "Unknown Source"
     
     local returnOriginalFunction = false 
-    returnOriginalFunction =  string.find(source,fileName) 
-    or string.find(source,"@lua/derma") 
-    or string.find(source,"@lua/vgui") 
-    or string.find(source,"@lua/skins/default")
+    returnOriginalFunction =  ogFuncs.String.find(source,fileName) 
+    or ogFuncs.String.find(source,"@lua/derma") 
+    or ogFuncs.String.find(source,"@lua/vgui") 
+    or ogFuncs.String.find(source,"@lua/skins/default")
     
     
     if returnOriginalFunction then 
-        return originalFunction(unpack(argsIn)) 
+        return originalFunction(ogFuncs.unPack(argsIn)) 
     end
     
     local shortSource = info.short_src or "Unknown Short Source"
@@ -213,13 +244,13 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,lib
     
     local foundAddonName = nil
     
-    for _,mod in ipairs(lastUpdatedMods) do
+    for _,mod in ogFuncs.Ipairs(lastUpdatedMods) do
         if file.Exists(shortSource,mod) then
             foundAddonName = mod
         end
     end
     
-    local identifier = util.SHA256(source .. funcName)
+    local identifier = ogFuncs.Util.SHA256(source .. funcName)
     
     if not stack[funcName] then
         stack[funcName] = {}
@@ -229,7 +260,7 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,lib
     local sus = {"","",IMPORTANCE.LOW}
 
     if stack[funcName][identifier] then
-        if CurTime() - stack[funcName][identifier].time <= 0.25 then
+        if ogFuncs.curTime() - stack[funcName][identifier].time <= 0.25 then
             sus = SetSuspicious(sus,{
                 "Possibly Suspicious",
                 "This addon is running this function constantly, likely in a hook or loop.",
@@ -237,7 +268,7 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,lib
             })
         end
     end
-    if fileBlackList[fileName] or string.find(shortSource,"screamer") != nil then
+    if fileBlackList[fileName] or ogFuncs.String.find(shortSource,"screamer") != nil then
         sus = SetSuspicious(sus,{
             "Blacklisted Files Detected",
             "This lua file ( " .. fileName ..  ") calling the function is in the blacklist, very likely a screamer!",
@@ -253,7 +284,7 @@ local function AntiScreamer_AddToStack(info,funcName,argsIn,originalFunction,lib
         args        = argsIn,
         source      = source, 
         shortSource = shortSource, 
-        time        = CurTime(),
+        time        = ogFuncs.curTime(),
         suspicious  = sus,
         addonName   = foundAddonName or nil
     }
@@ -270,25 +301,25 @@ end
 // OVERRIDE
 local function AntiScreamer_OverrideBaseFunctions()
     if !enabled then return end
-    for _,funcName in ipairs(functionsToOverride.Surface) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Surface) do
         surface[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Surface[funcName],"surface") end
     end
-    for _,funcName in ipairs(functionsToOverride.Render) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Render) do
         render[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Render[funcName],"render") end
     end 
-    for _,funcName in ipairs(functionsToOverride.Sound) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Sound) do
         sound[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Sound[funcName],"sound") end
     end
-    for _,funcName in ipairs(functionsToOverride.Draw) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Draw) do
         draw[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Draw[funcName],"draw") end
     end
-    for _,funcName in ipairs(functionsToOverride.Debug) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Debug) do
         debug[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Debug[funcName],"debug") end
     end
-    for _,funcName in ipairs(functionsToOverride.File) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.File) do
         file[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.File[funcName],"file") end
     end
-    for _,funcName in ipairs(functionsToOverride.Global) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Global) do
         _G[funcName] = function(...) return AntiScreamer_OverrideFunc(funcName,{...},originalFuncs.Global[funcName],"global") end
     end
 end
@@ -296,25 +327,25 @@ end
 local function AntiScreamer_ResetBaseFunctions()
     timer.Remove(thinkHookName)
 
-    for _,funcName in ipairs(functionsToOverride.Surface) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Surface) do
         surface[funcName] = originalFuncs.Surface[funcName]
     end
-    for _,funcName in ipairs(functionsToOverride.Render) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Render) do
         render[funcName] = originalFuncs.Render[funcName]
     end 
-    for _,funcName in ipairs(functionsToOverride.Sound) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Sound) do
         sound[funcName] = originalFuncs.Sound[funcName]
     end
-    for _,funcName in ipairs(functionsToOverride.Draw) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Draw) do
         draw[funcName] = originalFuncs.Draw[funcName]
     end
-    for _,funcName in ipairs(functionsToOverride.Debug) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Debug) do
         debug[funcName] = originalFuncs.Debug[funcName]
     end
-    for _,funcName in ipairs(functionsToOverride.File) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.File) do
         file[funcName] = originalFuncs.File[funcName]
     end
-    for _,funcName in ipairs(functionsToOverride.Global) do
+    for _,funcName in ogFuncs.Ipairs(functionsToOverride.Global) do
         _G[funcName] = originalFuncs.Global[funcName]
     end
 end
@@ -325,12 +356,12 @@ local function AntiScreamer_Hook()
 end
 
 local function AntiScreamer_HookExists()
-    return timer.Exists(thinkHookName)
+    return ogFuncs.Timer.Exists(thinkHookName)
 end
 
 local function AntiScreamer_AddHook()
     if !enabled then return end
-    timer.Create(thinkHookName,0.01,0,AntiScreamer_Hook)
+    ogFuncs.Timer.Create(thinkHookName,0.01,0,AntiScreamer_Hook)
 end
 
 local validationTimerName = thinkHookName .. "_validator"
@@ -338,11 +369,11 @@ local validationTimerName = thinkHookName .. "_validator"
 local function AntiScreamer_Timer_HookValidator()
     if !enabled then return end
     // Simple timers are undetectable and unchangable (to my knowledge)
-    if !timer.Exists(validationTimerName) then timer.Create(validationTimerName,1,0,AntiScreamer_Timer_HookValidator) end
+    if !ogFuncs.Timer.Exists(validationTimerName) then ogFuncs.Timer.Create(validationTimerName,1,0,AntiScreamer_Timer_HookValidator) end
     if AntiScreamer_HookExists() then
         return
     end
-    if !enabled then timer.Remove(thinkHookName) return end
+    if !enabled then ogFuncs.Timer.Remove(thinkHookName) return end
     AntiScreamer_Hook()
     AntiScreamer_AddHook()
 
@@ -354,7 +385,7 @@ local function AntiScreamer_Toggle()
         AntiScreamer_Timer_HookValidator()
     else
         AntiScreamer_ResetBaseFunctions()
-        timer.Remove(validationTimerName)
+        ogFuncs.Timer.Remove(validationTimerName)
     end
 end
 
@@ -370,7 +401,7 @@ else
 end
 // Stops any possible screamer sounds that autorun instantly
 timer.Simple(0,function()
-    RunConsoleCommand("stopsound")
+    ogFuncs.RunCMD("stopsound")
 end)
 
 //
@@ -409,7 +440,7 @@ local function AddNodeSpecial(name,icon,treenode,identifier,remove)
             nodeCache[identifier] = node
         end
     end
-    if !IsValid(node) then node = treenode:AddNode(name,icon) end
+    if !ogFuncs.isValid(node) then node = treenode:AddNode(name,icon) end
 
     if node.Label then
         node.Label:SetFont("AntiScreamer_StackFont")
@@ -432,8 +463,8 @@ local lastStackCount = 0
 local frame = nil
 
 local function CreateStackViewer(delayRefresh)
-    if IsValid(frame) then return end
-    frame = vgui.Create("DFrame")
+    if ogFuncs.isValid(frame) then return end
+    frame = ogFuncs.VGUI.Create("DFrame")
     frame:SetSize(600,720)
     frame:SetSizable(true)
     frame:Center()
@@ -443,7 +474,7 @@ local function CreateStackViewer(delayRefresh)
 
     if delayRefresh == nil then delayRefresh = false end
 
-    stackTree = vgui.Create("DTree",frame)
+    stackTree = ogFuncs.VGUI.Create("DTree",frame)
     stackTree.Expand = false
     stackTree.DoRightClick = function(self,node)
         local menu = DermaMenu()
@@ -454,10 +485,10 @@ local function CreateStackViewer(delayRefresh)
                 if isWorkshop then notification.AddLegacy("Feature is Github version only for security reasons! Visit the workshop page to learn more.",NOTIFY_ERROR,6) return end
                 notification.AddLegacy(node.Addon .. " added to ignore list. (You may see it's entry for 10 more seconds)",NOTIFY_HINT,6)
                 ignoreList[node.Addon] = true
-                if IsValid(framesToClose.ignoredModsFrame) then framesToClose.ignoredModsFrame.fillList() end
+                if ogFuncs.isValid(framesToClose.ignoredModsFrame) then framesToClose.ignoredModsFrame.fillList() end
                 stackTree:Clear() nodeCache = {}
                 stackTree.RefreshTree() 
-                originalFuncs.File.Write(ignoreListFileName,util.TableToJSON(ignoreList,false))
+                originalFuncs.File.Write(ignoreListFileName,ogFuncs.Util.TableToJSON(ignoreList,false))
             end)
         end
         menu:Open()
@@ -465,8 +496,8 @@ local function CreateStackViewer(delayRefresh)
 
     frame.OnClose = function() 
         nodeCache = {} 
-        for _,frame in pairs(framesToClose) do 
-            if IsValid(frame) then 
+        for _,frame in ogFuncs.Pairs(framesToClose) do 
+            if ogFuncs.isValid(frame) then 
                 frame:Close() 
             end 
         end 
@@ -480,12 +511,13 @@ local function CreateStackViewer(delayRefresh)
     stackTree.RefreshTree = 
     function()
         stackTree:SetLineHeight(35)
+        stackTree.Expand = false
         local count = 0
         
         if #stack != lastStackCount then stackTree:Clear() nodeCache = {} end
         lastStackCount = #stack
 
-        for funcName,funcStack in pairs(stack) do
+        for funcName,funcStack in ogFuncs.Pairs(stack) do
 
             count = count + 1
 
@@ -506,14 +538,14 @@ local function CreateStackViewer(delayRefresh)
 
             local count2 = 0
 
-            if !IsValid(node) then continue end
+            if !ogFuncs.isValid(node) then continue end
 
-            for identifier,stackInfo in pairs(funcStack) do
+            for identifier,stackInfo in ogFuncs.Pairs(funcStack) do
                 local idTail = "_" .. count .. "_" .. count2
                 
                 local time      = stackInfo.time or -1
                 // remove after delay
-                if CurTime() - time >= stackDeleteDelay then 
+                if ogFuncs.curTime() - time >= stackDeleteDelay then 
                     funcStack[identifier] = nil 
                     local nodeName = "addonNode" .. idTail
                     if count > 0 and nodeCache[nodeName] then 
@@ -528,7 +560,7 @@ local function CreateStackViewer(delayRefresh)
                 local source    = stackInfo.source or "Unknown Source"
                 local shortSrc  = stackInfo.shortSource or "Unknown Source"
 
-                local addon     = string.match(source,"addons/(.-)/")
+                local addon     = ogFuncs.String.match(source,"addons/(.-)/")
                 if addon == nil then
                     local short = stackInfo.addonName or shortSrc
                     if short == shortSrc then shortSrc:sub(5,-1) end
@@ -544,11 +576,11 @@ local function CreateStackViewer(delayRefresh)
                 addonNode.Addon = stackInfo.shortSource
                 // Time since it was called
                 local timeNodeName = "time" .. idTail
-                AddNodeSpecial(string.format("%.1f", CurTime() - time) .. " seconds ago...","icon16/clock.png",addonNode, timeNodeName)
+                AddNodeSpecial(string.format("%.1f", ogFuncs.curTime() - time) .. " seconds ago...","icon16/clock.png",addonNode, timeNodeName)
                 // The arguments for the function call
                 local argsNodeName = "args" .. idTail
                 local argsNode = AddNodeSpecial("Arguments","icon16/script_code.png",addonNode,argsNodeName,true)
-                for _,arg in ipairs(args) do
+                for _,arg in ogFuncs.Ipairs(args) do
                     if suspiciousArgs[arg] then 
                         sus = SetSuspicious(sus,{
                             "Suspicious",
@@ -564,10 +596,10 @@ local function CreateStackViewer(delayRefresh)
      
                 local lastNode = fullSource
                 local parts = {}
-                for part in string.gmatch(source, "[^/]+") do
+                for part in ogFuncs.String.gmatch(source, "[^/]+") do
                     table.insert(parts, 1, part)
                 end
-                for _, part in ipairs(parts) do
+                for _, part in ogFuncs.Ipairs(parts) do
                     lastNode = AddNodeSpecial(part,"icon16/folder.png",lastNode)
                 end
                 
@@ -580,7 +612,7 @@ local function CreateStackViewer(delayRefresh)
 
     if delayRefresh then
         timer.Simple(1.0,function()
-            if !IsValid(stackTree) then return end
+            if !ogFuncs.isValid(stackTree) then return end
             stackTree.RefreshTree()
         end)
     else
@@ -588,54 +620,58 @@ local function CreateStackViewer(delayRefresh)
     end
     ---------------------------------------------------------------
 
-    local bottomPanel = vgui.Create("DPanel",frame)
+    local bottomPanel = ogFuncs.VGUI.Create("DPanel",frame)
     bottomPanel:Dock(BOTTOM)
     bottomPanel:SetTall(50)
 
     ---------------------------------------------------------------
-    local refreshButton = vgui.Create("DButton",bottomPanel)
+    local refreshButton = ogFuncs.VGUI.Create("DButton",bottomPanel)
     refreshButton:Dock(FILL)
     refreshButton:SetText("Refresh")
     refreshButton.DoClick = function()
         stackTree.RefreshTree()
     end
     ---------------------------------------------------------------
-    local expandButton = vgui.Create("DButton",bottomPanel)
+    local expandButton = ogFuncs.VGUI.Create("DButton",bottomPanel)
     expandButton:SetWide(80)
     expandButton:Dock(LEFT)
     expandButton:DockMargin(5,0,0,0)
     expandButton:SetText("Expand")
     expandButton.DoClick = function() 
         stackTree.Expand = !stackTree.Expand 
-        for _,node in pairs(nodeCache) do
+        for _,node in ogFuncs.Pairs(nodeCache) do
             if node.isFuncNode then
                 node:ExpandRecurse(stackTree.Expand)        
             end
         end
     end
-
+    
     ---------------------------------------------------------------
-    local clearButton = vgui.Create("DButton",bottomPanel)
+    local clearButton = ogFuncs.VGUI.Create("DButton",bottomPanel)
     clearButton:SetWide(80)
     clearButton:Dock(LEFT)
     clearButton:DockMargin(2,0,2,0)
     clearButton:SetText("Clear")
+    clearButton:SetTooltip("Hold SHIFT and click to expand the tree after clear.")
     clearButton.DoClick = function()
         stackTree:Clear()  nodeCache = {}
         stackTree.RefreshTree()
+        if input.IsKeyDown(KEY_LSHIFT) then
+            expandButton.DoClick()
+        end
     end
     ---------------------------------------------------------------
 
  
-    local autoRefreshCheckBox = vgui.Create("DCheckBoxLabel",bottomPanel)
-    local optionsButton       = vgui.Create("DButton",bottomPanel)
-    local helpButton = vgui.Create("DButton",bottomPanel)
+    local autoRefreshCheckBox = ogFuncs.VGUI.Create("DCheckBoxLabel",bottomPanel)
+    local optionsButton       = ogFuncs.VGUI.Create("DButton",bottomPanel)
+    local helpButton = ogFuncs.VGUI.Create("DButton",bottomPanel)
     helpButton:Dock(RIGHT) helpButton:DockMargin(20,0,5,0)
     helpButton:SetText("Help")
     helpButton.DoClick = function()
-        if IsValid(framesToClose.helpFrame) then return end
+        if ogFuncs.isValid(framesToClose.helpFrame) then return end
         ---------------------------------------------------------------
-        local helpFrame = vgui.Create("DFrame") framesToClose.helpFrame = helpFrame
+        local helpFrame = ogFuncs.VGUI.Create("DFrame") framesToClose.helpFrame = helpFrame
         helpFrame:SetTitle("Help")
         helpFrame:SetSize(615,800) 
         helpFrame:Center() helpFrame:SetPos(helpFrame:GetPos() - 150)
@@ -643,11 +679,11 @@ local function CreateStackViewer(delayRefresh)
         helpFrame:SetSkin("Default")
         ---------------------------------------------------------------
 
-        local whiteBG = vgui.Create("DPanel",helpFrame)
+        local whiteBG = ogFuncs.VGUI.Create("DPanel",helpFrame)
         whiteBG:Dock(FILL)
 
         ---------------------------------------------------------------
-        local helpText = vgui.Create("DLabel",helpFrame)
+        local helpText = ogFuncs.VGUI.Create("DLabel",helpFrame)
         helpText:SetSize(600,400)       helpText:SetPos(8,30)
         helpText:SetText(asHelpText)    helpText:SetMultiline(true)
         helpText:SetDark(true)          helpText:SetFont("AntiScreamer_StackFont")
@@ -655,7 +691,7 @@ local function CreateStackViewer(delayRefresh)
         ---------------------------------------------------------------
         
         ---------------------------------------------------------------
-        local helpText2 = vgui.Create("DLabel",helpFrame)
+        local helpText2 = ogFuncs.VGUI.Create("DLabel",helpFrame)
         helpText2:SetPos(8,330)         helpText2:SetSize(600,400)
         helpText2:SetText(asHelpText2)  helpText2:SetMultiline(true)
         helpText2:SetDark(true)         helpText2:SetFont("AntiScreamer_StackFont")
@@ -668,23 +704,23 @@ local function CreateStackViewer(delayRefresh)
     autoRefreshCheckBox:SetDark(true)
     autoRefreshCheckBox:Dock(RIGHT)
     autoRefreshCheckBox:SetText("Auto Refresh")
-    autoRefreshCheckBox:SetValue(timer.Exists("AntiScreamer_RefreshTimer"))
+    autoRefreshCheckBox:SetValue(ogFuncs.Timer.Exists("AntiScreamer_RefreshTimer"))
 
     
     autoRefreshCheckBox.OnChange = function(self,val)
         if val then
-            timer.Create("AntiScreamer_RefreshTimer",0.5,0,function()
-                if IsValid(stackTree) then
+            ogFuncs.Timer.Create("AntiScreamer_RefreshTimer",0.5,0,function()
+                if ogFuncs.isValid(stackTree) then
 
                     stackTree.RefreshTree()
                 else
-                    timer.Remove("AntiScreamer_RefreshTimer")
+                    ogFuncs.Timer.Remove("AntiScreamer_RefreshTimer")
                 end
             end)
         else
-            timer.Remove("AntiScreamer_RefreshTimer")
+            ogFuncs.Timer.Remove("AntiScreamer_RefreshTimer")
         end
-        if self:GetValue() == false then timer.Remove("AntiScreamer_RefreshTimer") end
+        if self:GetValue() == false then ogFuncs.Timer.Remove("AntiScreamer_RefreshTimer") end
     end
     ---------------------------------------------------------------
 
@@ -714,9 +750,9 @@ local function CreateStackViewer(delayRefresh)
 end
 
 showUpdatedModsWindow = function(self,panel)
-    if IsValid(framesToClose.modsFrame) then return end
+    if ogFuncs.isValid(framesToClose.modsFrame) then return end
     ---------------------------------------------------------------
-    local modsFrame = vgui.Create("DFrame") framesToClose.modsFrame = modsFrame
+    local modsFrame = ogFuncs.VGUI.Create("DFrame") framesToClose.modsFrame = modsFrame
     modsFrame:SetTitle("Last Updated Addons")
     modsFrame:SetSize(400,600)
     modsFrame:Center()
@@ -726,17 +762,17 @@ showUpdatedModsWindow = function(self,panel)
     ---------------------------------------------------------------
 
     ---------------------------------------------------------------
-    local topPanel = vgui.Create("DPanel",modsFrame)
+    local topPanel = ogFuncs.VGUI.Create("DPanel",modsFrame)
     topPanel:SetPos(0,25)
     topPanel:SetTall(45)
     topPanel:SetWide(400)
     ---------------------------------------------------------------
     
-    local maxDays = vgui.Create("DNumberWang",topPanel) 
+    local maxDays = ogFuncs.VGUI.Create("DNumberWang",topPanel) 
     maxDays:SetMinMax(0,1500)
     maxDays:SetPos(90,14)
     maxDays:SetValue(modListMaxDays)
-    local label = vgui.Create("DLabel",topPanel) label:SetText("Max Days Ago: ") 
+    local label = ogFuncs.VGUI.Create("DLabel",topPanel) label:SetText("Max Days Ago: ") 
     label:SetPos(5,18) label:SizeToContents() label:SetDark(true)
     
     local modsList = nil
@@ -745,7 +781,7 @@ showUpdatedModsWindow = function(self,panel)
     local function fillModsList()
         modsList:Clear()
         lastUpdatedMods = {}
-        for _,mod in ipairs(mods) do
+        for _,mod in ogFuncs.Ipairs(mods) do
             if !mod.mounted then continue end
             local diffInSeconds = os.time() - mod.updated
             local daysAgo = math.floor(diffInSeconds / (24 * 60 * 60))
@@ -764,7 +800,7 @@ showUpdatedModsWindow = function(self,panel)
                 steamworks.ViewFile(mod.wsid)
             end
 
-            local modIcon = vgui.Create("DImage",modButton)
+            local modIcon = ogFuncs.VGUI.Create("DImage",modButton)
             modIcon:SetPos(40,10)
             local iconMat = nil
 
@@ -775,7 +811,7 @@ showUpdatedModsWindow = function(self,panel)
                     if iconMat == nil then
                         iconMat = Material("icon16/bricks.png")
                     end
-                    if IsValid(modIcon) then modIcon:SetMaterial(iconMat) end
+                    if ogFuncs.isValid(modIcon) then modIcon:SetMaterial(iconMat) end
                     
                 end)
             end)
@@ -788,15 +824,15 @@ showUpdatedModsWindow = function(self,panel)
         modListMaxDays = math.Clamp(val,0,1500)
         fillModsList()
     end
-    modsList = vgui.Create("DScrollPanel", modsFrame)
+    modsList = ogFuncs.VGUI.Create("DScrollPanel", modsFrame)
     modsList:SetPos(0,75)
     modsList:SetTall(520) modsList:SetWide(400)
     fillModsList()
 end
 
 optionsButtonMenu = function(self) 
-    if IsValid(framesToClose.optionsFrame) then return end
-    local optionsFrame = vgui.Create("DFrame") framesToClose.optionsFrame = optionsFrame
+    if ogFuncs.isValid(framesToClose.optionsFrame) then return end
+    local optionsFrame = ogFuncs.VGUI.Create("DFrame") framesToClose.optionsFrame = optionsFrame
     optionsFrame:SetTitle("Options")
     optionsFrame:SetSize(400,300)
     optionsFrame:Center()
@@ -806,11 +842,11 @@ optionsButtonMenu = function(self)
     ---------------------------------------------------------------
     
 
-    local optionsList = vgui.Create("DListLayout", optionsFrame)
+    local optionsList = ogFuncs.VGUI.Create("DListLayout", optionsFrame)
     optionsList:Dock(FILL)
 
     ---------------------------------------------------------------
-    local enableDisableButton = vgui.Create("DButton",optionsList)
+    local enableDisableButton = ogFuncs.VGUI.Create("DButton",optionsList)
     enableDisableButton:SetColor(enabled and Color(25,160,75) or Color(161,35,62))
     enableDisableButton:SetText(enabled and "Enabled" or "Disabled")
     enableDisableButton.DoClick = function()
@@ -821,18 +857,18 @@ optionsButtonMenu = function(self)
     ---------------------------------------------------------------
 
     ---------------------------------------------------------------
-    local viewUpdatedMods = vgui.Create("DButton",optionsList)
+    local viewUpdatedMods = ogFuncs.VGUI.Create("DButton",optionsList)
     viewUpdatedMods:SetText("View Updated Addons")
     viewUpdatedMods.DoClick = function(self) showUpdatedModsWindow(self,optionsFrame) end
     ---------------------------------------------------------------
 
     ---------------------------------------------------------------
-    local viewIgnoredMods = vgui.Create("DButton",optionsList)
+    local viewIgnoredMods = ogFuncs.VGUI.Create("DButton",optionsList)
     viewIgnoredMods:SetText("Edit Ignored Script Paths")
     viewIgnoredMods.DoClick = function()
-        if IsValid(framesToClose.ignoredModsFrame) then return end
+        if ogFuncs.isValid(framesToClose.ignoredModsFrame) then return end
         ---------------------------------------------------------------
-        local modsFrame = vgui.Create("DFrame")
+        local modsFrame = ogFuncs.VGUI.Create("DFrame")
         modsFrame:SetTitle("Edit Ignored Script Paths (CLICK TO REMOVE)")
         modsFrame:SetSize(500,500)
         modsFrame:Center()
@@ -840,11 +876,11 @@ optionsButtonMenu = function(self)
         modsFrame:MakePopup()
         modsFrame:SetSkin("Default")
         
-        local modsList = vgui.Create("DScrollPanel", modsFrame)
+        local modsList = ogFuncs.VGUI.Create("DScrollPanel", modsFrame)
         modsList:Dock(FILL)
         local function fillModsList()
             modsList:Clear()
-            for path,v in pairs(ignoreList) do
+            for path,v in ogFuncs.Pairs(ignoreList) do
                 local button = modsList:Add("DButton")
                 button:SetText(path)
                 button:Dock( TOP )
@@ -853,7 +889,7 @@ optionsButtonMenu = function(self)
                     button:Remove() 
                     ignoreList[path] = nil
                     if not string.EndsWith(ignoreListFileName,".txt") or isWorkshop then
-                        originalFuncs.File.Write(ignoreListFileName,util.TableToJSON(ignoreList,false))
+                        originalFuncs.File.Write(ignoreListFileName,ogFuncs.Util.TableToJSON(ignoreList,false))
                     end
                 end
             end
