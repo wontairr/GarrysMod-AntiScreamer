@@ -947,6 +947,7 @@ if AntiScreamerDisableCommand != "antiscreamer_changeme" and GetConVar(AntiScrea
     print("!!WARNING!! VVV")
     print("!!>>>>>>>!! Anti-Screamer is disabled via the command: '" .. AntiScreamerDisableCommand .. "'")
     print("!!WARNING!! ^^^")
+    enabled = false
 else
     AntiScreamer_Timer_HookValidator()
 end
